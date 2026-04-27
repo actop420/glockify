@@ -19,6 +19,9 @@ coverage
 # Vercel
 .vercel
 
+# Skills
+.agents
+
 # Build Outputs
 dist
 .output
