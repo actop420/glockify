@@ -21,9 +21,9 @@ function ThemeToggle() {
         aria-label="Toggle theme"
       >
         {resolvedTheme === "dark" ? (
-          <MoonIcon className="size-4" />
+          <MoonIcon className="size-5" />
         ) : (
-          <SunIcon className="size-4" />
+          <SunIcon className="size-5" />
         )}
       </DropdownMenuTrigger>
       <DropdownMenuContent>

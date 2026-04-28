@@ -3,10 +3,10 @@ import { BellIcon } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
-import { TimerBar } from "./TimerBar"
-import { DayGroup } from "./DayGroup"
-import { useEntriesStore } from "@/lib/store/entriesStore"
-import { formatDuration, groupEntriesByDay } from "@/lib/utils/time"
+import { DayGroup } from "../components/DayGroup"
+import { TimerBar } from "../components/TimerBar"
+import { useEntriesStore } from "../stores/entriesStore"
+import { formatDuration, groupEntriesByDay } from "../utils/time"
 
 export function TimeTrackerPage() {
   const entries = useEntriesStore((s) => s.entries)
@@ -17,7 +17,7 @@ export function TimeTrackerPage() {
   return (
     <div className="flex min-h-svh flex-col bg-background">
       {/* Page header */}
-      <header className="border-b border-border bg-background">
+      <header className="border-b border-border bg-white dark:bg-card">
         <div className="flex w-full items-center justify-between px-6 py-4 sm:px-8">
           <div>
             <h1 className="text-lg font-semibold text-foreground">Time Tracker</h1>
@@ -28,7 +28,7 @@ export function TimeTrackerPage() {
           <div className="flex items-center gap-2">
             <ThemeToggle />
             <Button variant="ghost" size="icon" aria-label="Notifications" disabled>
-              <BellIcon className="size-4" />
+              <BellIcon className="size-5" />
             </Button>
           </div>
         </div>
@@ -53,9 +53,9 @@ export function TimeTrackerPage() {
             <>
               <div className="mb-4 flex items-center justify-between px-0.5">
                 <span className="text-base font-medium text-muted-foreground">Last week</span>
-                <span className="text-base text-muted-foreground">
-                  Week total:{" "}
-                  <span className="font-mono text-lg font-semibold text-foreground">
+                <span className="inline-flex items-baseline gap-2 text-base text-muted-foreground">
+                  Week total:
+                  <span className="text-lg font-semibold tabular-nums text-foreground">
                     {formatDuration(weekTotal)}
                   </span>
                 </span>

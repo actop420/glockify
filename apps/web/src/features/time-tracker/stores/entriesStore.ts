@@ -1,6 +1,7 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
-import type { Project, Tag, TimeEntry } from "@/lib/types/time-entry"
+
+import type { Project, Tag, TimeEntry } from "../types/time-entry"
 
 type EntriesState = {
   entries: Array<TimeEntry>

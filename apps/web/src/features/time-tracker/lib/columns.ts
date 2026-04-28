@@ -1,5 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table"
-import type { TimeEntry } from "@/lib/types/time-entry"
+
+import type { TimeEntry } from "../types/time-entry"
 
 export const entryColumns: Array<ColumnDef<TimeEntry>> = [
   {

@@ -1,7 +1,7 @@
-import { useEntriesTable } from "./table"
+import { useEntriesTable } from "../lib/table"
+import { formatDuration } from "../utils/time"
 import { EntryRow } from "./EntryRow"
-import type { DayGroup as DayGroupData } from "@/lib/utils/time"
-import { formatDuration } from "@/lib/utils/time"
+import type { DayGroup as DayGroupData } from "../utils/time"
 
 type Props = {
   group: DayGroupData
@@ -15,9 +15,9 @@ export function DayGroup({ group }: Props) {
       {/* Day header */}
       <div className="flex items-center justify-between border-b border-border bg-muted/40 px-4 py-3 sm:px-5">
         <span className="text-sm font-medium text-muted-foreground">{group.label}</span>
-        <span className="text-sm text-muted-foreground">
-          Total:{" "}
-          <span className="font-mono text-base font-semibold text-foreground">
+        <span className="inline-flex items-baseline gap-2 text-sm text-muted-foreground">
+          Total:
+          <span className="text-base font-semibold tabular-nums text-foreground">
             {formatDuration(group.total)}
           </span>
         </span>

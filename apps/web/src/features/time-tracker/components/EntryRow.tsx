@@ -1,9 +1,7 @@
 import * as React from "react"
 import {
   CalendarIcon,
-  CircleDotIcon,
   EllipsisVerticalIcon,
-  GlobeIcon,
   PlayIcon,
   TagIcon,
 } from "lucide-react"
@@ -23,16 +21,17 @@ import {
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
 
-import type { TimeEntry } from "@/lib/types/time-entry"
-import { useEntriesStore } from "@/lib/store/entriesStore"
-import { useTimerStore } from "@/lib/store/timerStore"
+import { useEntriesStore } from "../stores/entriesStore"
+import { useTimerStore } from "../stores/timerStore"
 import {
   formatDuration,
   formatTime,
   parseDuration,
   parseTimeToEpoch,
   toDayKey,
-} from "@/lib/utils/time"
+} from "../utils/time"
+import { ProjectPicker } from "./ProjectPicker"
+import type { TimeEntry } from "../types/time-entry"
 
 type EditingField = "description" | "startTime" | "endTime" | "duration" | null
 
@@ -41,14 +40,13 @@ type Props = {
 }
 
 export function EntryRow({ entry }: Props) {
-  const { projects, tags: allTags, updateEntry, deleteEntry, duplicateEntry } =
+  const { projects, tags: allTags, updateEntry, deleteEntry, duplicateEntry, addProject } =
     useEntriesStore()
   const { prefill, startTimer } = useTimerStore()
 
   const [editingField, setEditingField] = React.useState<EditingField>(null)
   const [fieldValue, setFieldValue] = React.useState("")
 
-  const project = projects.find((p) => p.id === entry.projectId) ?? null
   const duration = entry.endTime - entry.startTime
 
   function startEdit(field: EditingField, initial: string) {
@@ -150,45 +148,13 @@ export function EntryRow({ entry }: Props) {
         </div>
 
         {/* Project inline */}
-        <DropdownMenu>
-          <DropdownMenuTrigger
-            className={cn(
-              "flex min-w-0 shrink items-center gap-2 rounded px-2 py-1 text-sm leading-5 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20",
-              project ? "text-foreground" : "text-muted-foreground"
-            )}
-          >
-            {project ? (
-              <>
-                <span className="size-2 rounded-full" style={{ backgroundColor: project.color }} />
-                <span className="max-w-[180px] truncate">{project.name}</span>
-              </>
-            ) : (
-              <>
-                <GlobeIcon className="size-4" />
-                <span>No project</span>
-              </>
-            )}
-          </DropdownMenuTrigger>
-          <DropdownMenuContent>
-            {entry.projectId && (
-              <>
-                <DropdownMenuItem onClick={() => updateEntry(entry.id, { projectId: null })}>
-                  <span className="text-muted-foreground">No project</span>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-              </>
-            )}
-            {projects.map((p) => (
-              <DropdownMenuItem
-                key={p.id}
-                onClick={() => updateEntry(entry.id, { projectId: p.id })}
-              >
-                <CircleDotIcon className="size-3.5" style={{ color: p.color }} />
-                {p.name}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <ProjectPicker
+          projects={projects}
+          value={entry.projectId}
+          onValueChange={(projectId) => updateEntry(entry.id, { projectId })}
+          onCreateProject={addProject}
+          variant="row"
+        />
       </div>
 
       {/* Right: tag, time range, calendar, duration, play, kebab */}
@@ -252,7 +218,7 @@ export function EntryRow({ entry }: Props) {
             </span>
           )}
 
-          <span className="text-muted-foreground/40">—</span>
+          <span className="text-muted-foreground/40">-</span>
 
           {editingField === "endTime" ? (
             <input
@@ -294,7 +260,7 @@ export function EntryRow({ entry }: Props) {
               onChange={(e) => setFieldValue(e.target.value)}
               onBlur={() => commitEdit("duration", fieldValue)}
               onKeyDown={(e) => handleKeyDown(e, "duration")}
-              className="w-full rounded border border-ring bg-background px-1.5 text-right font-mono text-base outline-none ring-2 ring-ring/20"
+              className="w-full rounded border border-ring bg-background px-1.5 text-right text-base outline-none ring-2 ring-ring/20"
             />
           ) : (
             <span
@@ -302,7 +268,7 @@ export function EntryRow({ entry }: Props) {
               tabIndex={0}
               onClick={() => startEdit("duration", formatDuration(duration))}
               onKeyDown={(e) => e.key === "Enter" && startEdit("duration", formatDuration(duration))}
-              className="cursor-text rounded px-2 py-1 font-mono text-base font-bold tabular-nums text-foreground hover:bg-muted"
+              className="cursor-text rounded px-2 py-1 text-base font-semibold tabular-nums text-foreground hover:bg-muted"
             >
               {formatDuration(duration)}
             </span>

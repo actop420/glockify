@@ -1,11 +1,12 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
-import type { TimeEntry } from "@/lib/types/time-entry"
+
+import type { TimeEntry } from "../types/time-entry"
 
 type TimerState = {
   isRunning: boolean
-  startedAt: number | null     // epoch ms — set when live timer is running
-  manualStartTime: number | null  // epoch ms — set when user picks a manual start time
+  startedAt: number | null
+  manualStartTime: number | null
   description: string
   projectId: string | null
   tags: Array<string>

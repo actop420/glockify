@@ -1,13 +1,13 @@
-import type { TimeEntry } from "@/lib/types/time-entry"
+import type { TimeEntry } from "../types/time-entry"
 
 export type DayGroup = {
-  dayKey: string    
-  label: string     
+  dayKey: string
+  label: string
   entries: Array<TimeEntry>
-  total: number     
+  total: number
 }
 
-/** ms → "HH:MM:SS" */
+/** ms -> "HH:MM:SS" */
 export function formatDuration(ms: number): string {
   const totalSeconds = Math.max(0, Math.floor(ms / 1000))
   const h = Math.floor(totalSeconds / 3600)
@@ -16,12 +16,12 @@ export function formatDuration(ms: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
 }
 
-/** "HH:MM:SS" or "H:MM:SS" → ms. Returns 0 for invalid input. */
+/** "HH:MM:SS" or "H:MM:SS" -> ms. Returns 0 for invalid input. */
 export function parseDuration(str: string): number {
   const parts = str.trim().split(":").map(Number)
   if (parts.length !== 3 || parts.some(isNaN)) return 0
   const [h, m, s] = parts
-  return ((h * 3600) + (m * 60) + s) * 1000
+  return (h * 3600 + m * 60 + s) * 1000
 }
 
 export function formatTime(ts: number): string {
@@ -50,7 +50,7 @@ export function parseTimeToEpoch(timeStr: string, referenceMs: number): number |
   return d.getTime()
 }
 
-/** epoch ms → "Tue, Apr 21" */
+/** epoch ms -> "Tue, Apr 21" */
 export function formatDateLabel(ts: number): string {
   return new Date(ts).toLocaleDateString("en-US", {
     weekday: "short",
@@ -59,7 +59,7 @@ export function formatDateLabel(ts: number): string {
   })
 }
 
-/** epoch ms → "YYYY-MM-DD" local date key */
+/** epoch ms -> "YYYY-MM-DD" local date key */
 export function toDayKey(ts: number): string {
   const d = new Date(ts)
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`
