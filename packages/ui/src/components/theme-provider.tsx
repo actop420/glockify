@@ -13,6 +13,24 @@ const ThemeContext = React.createContext<ThemeContextValue | undefined>(undefine
 
 const STORAGE_KEY = "glockify-theme"
 
+function readStoredTheme(): Theme | null {
+  if (typeof window === "undefined") return null
+
+  try {
+    return localStorage.getItem(STORAGE_KEY) as Theme | null
+  } catch {
+    return null
+  }
+}
+
+function writeStoredTheme(theme: Theme) {
+  try {
+    localStorage.setItem(STORAGE_KEY, theme)
+  } catch {
+    // Storage can be unavailable in private browsing or locked-down environments.
+  }
+}
+
 function getSystemTheme(): "light" | "dark" {
   if (typeof window === "undefined") return "light"
   return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light"
@@ -31,7 +49,7 @@ function ThemeProvider({
 }) {
   const [theme, setThemeState] = React.useState<Theme>(() => {
     if (typeof window === "undefined") return defaultTheme
-    const storedTheme = localStorage.getItem(STORAGE_KEY) as Theme | null
+    const storedTheme = readStoredTheme()
     return storedTheme ?? defaultTheme
   })
 
@@ -57,7 +75,7 @@ function ThemeProvider({
   }, [theme])
 
   const setTheme = React.useCallback((next: Theme) => {
-    localStorage.setItem(STORAGE_KEY, next)
+    writeStoredTheme(next)
     setThemeState(next)
   }, [])
 
@@ -65,8 +83,13 @@ function ThemeProvider({
     setTheme(resolved === "dark" ? "light" : "dark")
   }, [resolved, setTheme])
 
+  const value = React.useMemo(
+    () => ({ theme, resolvedTheme: resolved, setTheme, toggleTheme }),
+    [theme, resolved, setTheme, toggleTheme]
+  )
+
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme: resolved, setTheme, toggleTheme }}>
+    <ThemeContext.Provider value={value}>
       {children}
     </ThemeContext.Provider>
   )

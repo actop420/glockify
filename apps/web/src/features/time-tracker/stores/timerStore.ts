@@ -20,6 +20,7 @@ type TimerState = {
   setDescription: (v: string) => void
   setProjectId: (v: string | null) => void
   setTags: (v: Array<string>) => void
+  toggleTag: (tagId: string) => void
   prefill: (values: Pick<TimeEntry, "description" | "projectId" | "tags">) => void
 }
 
@@ -62,6 +63,12 @@ export const useTimerStore = create<TimerState>()(
       setDescription: (v) => set({ description: v }),
       setProjectId: (v) => set({ projectId: v }),
       setTags: (v) => set({ tags: v }),
+      toggleTag: (tagId) =>
+        set((s) => ({
+          tags: s.tags.includes(tagId)
+            ? s.tags.filter((id) => id !== tagId)
+            : [...s.tags, tagId],
+        })),
 
       prefill: (values) =>
         set({

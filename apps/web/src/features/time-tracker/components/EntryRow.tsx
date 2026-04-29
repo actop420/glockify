@@ -30,6 +30,7 @@ import {
   parseTimeToEpoch,
   toDayKey,
 } from "../utils/time"
+import { getTagNames } from "../utils/tags"
 import { ProjectPicker } from "./ProjectPicker"
 import type { TimeEntry } from "../types/time-entry"
 
@@ -40,9 +41,15 @@ type Props = {
 }
 
 export function EntryRow({ entry }: Props) {
-  const { projects, tags: allTags, updateEntry, deleteEntry, duplicateEntry, addProject } =
-    useEntriesStore()
-  const { prefill, startTimer } = useTimerStore()
+  const projects = useEntriesStore((state) => state.projects)
+  const allTags = useEntriesStore((state) => state.tags)
+  const updateEntry = useEntriesStore((state) => state.updateEntry)
+  const deleteEntry = useEntriesStore((state) => state.deleteEntry)
+  const duplicateEntry = useEntriesStore((state) => state.duplicateEntry)
+  const toggleEntryTag = useEntriesStore((state) => state.toggleEntryTag)
+  const addProject = useEntriesStore((state) => state.addProject)
+  const prefill = useTimerStore((state) => state.prefill)
+  const startTimer = useTimerStore((state) => state.startTimer)
 
   const [editingField, setEditingField] = React.useState<EditingField>(null)
   const [fieldValue, setFieldValue] = React.useState("")
@@ -88,13 +95,6 @@ export function EntryRow({ entry }: Props) {
     if (e.key === "Escape") cancelEdit()
   }
 
-  function toggleTag(tagId: string) {
-    const next = entry.tags.includes(tagId)
-      ? entry.tags.filter((t) => t !== tagId)
-      : [...entry.tags, tagId]
-    updateEntry(entry.id, { tags: next })
-  }
-
   function handlePlayClick() {
     prefill({
       description: entry.description,
@@ -106,6 +106,8 @@ export function EntryRow({ entry }: Props) {
 
   const inlineInputCls =
     "w-full rounded border border-ring bg-background px-2 py-1 text-base outline-none ring-2 ring-ring/20"
+  const selectedTagNames = getTagNames(entry.tags, allTags)
+  const selectedTagLabel = selectedTagNames.join(", ")
 
   return (
     <div
@@ -115,8 +117,8 @@ export function EntryRow({ entry }: Props) {
       )}
     >
       {/* Left: description + project */}
-      <div className="flex min-w-0 items-center gap-5 pr-6">
-        <div className="flex min-w-0 flex-[0_1_320px] items-center gap-3">
+      <div className="flex min-w-0 items-center gap-6 pr-6">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
           {entry.isOvertime && (
             <Badge className="shrink-0 bg-amber-100 px-2.5 py-0.5 text-xs font-semibold text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
               OVERTIME
@@ -139,7 +141,7 @@ export function EntryRow({ entry }: Props) {
               onKeyDown={(e) => e.key === "Enter" && startEdit("description", entry.description)}
               className={cn(
                 "block cursor-text truncate text-base leading-6 text-foreground",
-                entry.description ? "font-medium" : "italic text-muted-foreground"
+                !entry.description && "italic text-muted-foreground"
               )}
             >
               {entry.description || "No description"}
@@ -148,13 +150,15 @@ export function EntryRow({ entry }: Props) {
         </div>
 
         {/* Project inline */}
-        <ProjectPicker
-          projects={projects}
-          value={entry.projectId}
-          onValueChange={(projectId) => updateEntry(entry.id, { projectId })}
-          onCreateProject={addProject}
-          variant="row"
-        />
+        <div className="w-44 shrink-0">
+          <ProjectPicker
+            projects={projects}
+            value={entry.projectId}
+            onValueChange={(projectId) => updateEntry(entry.id, { projectId })}
+            onCreateProject={addProject}
+            variant="row"
+          />
+        </div>
       </div>
 
       {/* Right: tag, time range, calendar, duration, play, kebab */}
@@ -162,16 +166,24 @@ export function EntryRow({ entry }: Props) {
         {/* Tags */}
         <Popover>
           <PopoverTrigger
+            aria-label={selectedTagLabel ? `Tags: ${selectedTagLabel}` : "Tags"}
+            title={selectedTagLabel || undefined}
             className={cn(
-              "relative flex size-9 items-center justify-center rounded-md transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20",
-              entry.tags.length > 0 ? "text-foreground" : "text-muted-foreground"
+              "flex h-9 min-w-9 cursor-pointer items-center gap-1.5 rounded-md px-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20",
+              selectedTagNames.length > 0
+                ? "justify-start text-foreground"
+                : "justify-center text-muted-foreground"
             )}
           >
-            <TagIcon className="size-4.5" />
-            {entry.tags.length > 0 && (
-              <Badge variant="secondary" className="h-5 px-1.5 py-0 text-xs">
-                {entry.tags.length}
+            {selectedTagNames.length > 0 ? (
+              <Badge
+                variant="secondary"
+                className="rounded-md px-2 py-0 text-xs font-normal leading-5"
+              >
+                {selectedTagLabel}
               </Badge>
+            ) : (
+              <TagIcon className="size-4.5 shrink-0" />
             )}
           </PopoverTrigger>
           <PopoverContent className="w-48 p-3">
@@ -185,7 +197,7 @@ export function EntryRow({ entry }: Props) {
                   <input
                     type="checkbox"
                     checked={entry.tags.includes(tag.id)}
-                    onChange={() => toggleTag(tag.id)}
+                    onChange={() => toggleEntryTag(entry.id, tag.id)}
                     className="accent-primary"
                   />
                   {tag.name}
@@ -196,7 +208,7 @@ export function EntryRow({ entry }: Props) {
         </Popover>
 
         {/* Time range */}
-        <div className="flex w-40 items-center justify-center gap-1.5 text-base text-muted-foreground">
+        <div className="flex w-40 items-center justify-center gap-1.5 text-base text-foreground">
           {editingField === "startTime" ? (
             <input
               autoFocus
@@ -246,7 +258,7 @@ export function EntryRow({ entry }: Props) {
         <button
           type="button"
           title={toDayKey(entry.startTime)}
-          className="flex size-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted"
+          className="flex size-9 cursor-pointer items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted"
         >
           <CalendarIcon className="size-4.5" />
         </button>
@@ -280,7 +292,7 @@ export function EntryRow({ entry }: Props) {
           type="button"
           onClick={handlePlayClick}
           title="Start timer with this entry"
-          className="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
+          className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-primary"
         >
           <PlayIcon className="size-4.5" />
         </button>
@@ -288,19 +300,22 @@ export function EntryRow({ entry }: Props) {
         {/* Kebab menu */}
         <DropdownMenu>
           <DropdownMenuTrigger
-            className="flex size-9 shrink-0 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            className="flex size-9 shrink-0 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             aria-label="More actions"
           >
             <EllipsisVerticalIcon className="size-4.5" />
           </DropdownMenuTrigger>
           <DropdownMenuContent>
-            <DropdownMenuItem onClick={() => duplicateEntry(entry.id)}>
+            <DropdownMenuItem
+              onClick={() => duplicateEntry(entry.id)}
+              className="cursor-pointer"
+            >
               Duplicate
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => deleteEntry(entry.id)}
-              className="text-destructive focus:text-destructive data-[highlighted]:text-destructive"
+              className="cursor-pointer text-destructive focus:text-destructive data-[highlighted]:text-destructive"
             >
               Delete
             </DropdownMenuItem>

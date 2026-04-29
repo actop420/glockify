@@ -15,6 +15,7 @@ import { useElapsedTime } from "../hooks/useElapsedTime"
 import { useEntriesStore } from "../stores/entriesStore"
 import { useTimerStore } from "../stores/timerStore"
 import { formatDuration, formatTime, parseTimeToEpoch } from "../utils/time"
+import { filterTags, getTagNames } from "../utils/tags"
 import { ProjectPicker } from "./ProjectPicker"
 
 const FALLBACK_TAG_COLORS = [
@@ -29,15 +30,26 @@ const FALLBACK_TAG_COLORS = [
 ]
 
 export function TimerBar() {
-  const {
-    isRunning, startedAt, manualStartTime,
-    description, projectId, tags,
-    startTimer, stopTimer, startManual, reset,
-    setStartedAt, setManualStartTime,
-    setDescription, setProjectId, setTags,
-  } = useTimerStore()
+  const isRunning = useTimerStore((state) => state.isRunning)
+  const startedAt = useTimerStore((state) => state.startedAt)
+  const manualStartTime = useTimerStore((state) => state.manualStartTime)
+  const description = useTimerStore((state) => state.description)
+  const projectId = useTimerStore((state) => state.projectId)
+  const tags = useTimerStore((state) => state.tags)
+  const startTimer = useTimerStore((state) => state.startTimer)
+  const stopTimer = useTimerStore((state) => state.stopTimer)
+  const startManual = useTimerStore((state) => state.startManual)
+  const reset = useTimerStore((state) => state.reset)
+  const setStartedAt = useTimerStore((state) => state.setStartedAt)
+  const setManualStartTime = useTimerStore((state) => state.setManualStartTime)
+  const setDescription = useTimerStore((state) => state.setDescription)
+  const setProjectId = useTimerStore((state) => state.setProjectId)
+  const toggleTag = useTimerStore((state) => state.toggleTag)
 
-  const { projects, tags: allTags, addEntry, addProject } = useEntriesStore()
+  const projects = useEntriesStore((state) => state.projects)
+  const allTags = useEntriesStore((state) => state.tags)
+  const addEntry = useEntriesStore((state) => state.addEntry)
+  const addProject = useEntriesStore((state) => state.addProject)
 
 
   const elapsed = useElapsedTime(isRunning ? startedAt : manualStartTime)
@@ -85,17 +97,10 @@ export function TimerBar() {
     }
   }
 
-  function toggleTag(tagId: string) {
-    setTags(tags.includes(tagId) ? tags.filter((t) => t !== tagId) : [...tags, tagId])
-  }
-
   const hasTagSelection = tags.length > 0
-  const filteredTags = allTags.filter((tag) => {
-    const query = tagSearch.trim().toLowerCase()
-    if (!query) return true
-
-    return tag.name.toLowerCase().includes(query)
-  })
+  const selectedTagNames = getTagNames(tags, allTags)
+  const selectedTagLabel = selectedTagNames.join(", ")
+  const filteredTags = filterTags(allTags, tagSearch)
 
   return (
     <div
@@ -110,7 +115,7 @@ export function TimerBar() {
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="What are you working on?"
-          className="min-w-0 border-0 bg-transparent px-0 text-base shadow-none focus-visible:ring-0"
+          className="min-w-0 border-transparent bg-transparent text-base shadow-none hover:border-border focus-visible:border-ring"
         />
         {/* Project picker */}
         <ProjectPicker
@@ -121,20 +126,28 @@ export function TimerBar() {
         />
       </div>
 
-      <div className="flex shrink-0 items-center border-l border-border px-3">
+      <div className="flex shrink-0 items-center border-l border-border px-2">
         {/* Tag picker */}
         <Popover>
           <PopoverTrigger
+            aria-label={selectedTagLabel ? `Tags: ${selectedTagLabel}` : "Tags"}
+            title={selectedTagLabel || undefined}
             className={cn(
-              "relative flex h-10 min-w-12 items-center justify-center gap-2 rounded-md px-3 text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 data-[popup-open]:bg-muted",
-              hasTagSelection ? "text-foreground" : "text-muted-foreground"
+              "flex h-10 min-w-12 max-w-80 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 data-[popup-open]:bg-muted",
+              hasTagSelection
+                ? "overflow-hidden text-foreground"
+                : "text-muted-foreground"
             )}
           >
-            <TagIcon className="size-4" />
-            {hasTagSelection && (
-              <Badge variant="secondary" className="h-4 px-1.5 py-0 text-[10px]">
-                {tags.length}
+            {selectedTagNames.length > 0 ? (
+              <Badge
+                variant="secondary"
+                className="max-w-full rounded-md px-2 py-0 text-left text-xs font-normal leading-5"
+              >
+                <span className="truncate">{selectedTagLabel}</span>
               </Badge>
+            ) : (
+              <TagIcon className="size-4 shrink-0" />
             )}
           </PopoverTrigger>
           <PopoverContent sideOffset={8} className="w-60 p-2 shadow-xl">
@@ -185,7 +198,7 @@ export function TimerBar() {
         <PopoverTrigger
           disabled={!isRunning}
           className={cn(
-            "mx-2 flex w-36 shrink-0 items-center justify-center rounded-md px-3 text-center text-2xl font-medium tabular-nums transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20",
+            "flex w-32 shrink-0 items-center justify-center rounded-md px-2 text-center text-2xl font-medium tabular-nums transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20",
             isRunning ? "cursor-pointer text-primary" : "cursor-default text-foreground hover:bg-transparent"
           )}
         >
@@ -222,7 +235,7 @@ export function TimerBar() {
         <Button
           onClick={handleStartStop}
           className={cn(
-            "h-12 w-36 rounded-lg text-base font-semibold tracking-wide shadow-md shadow-primary/20",
+            "h-12 w-36 cursor-pointer rounded-lg text-base font-semibold tracking-wide shadow-md shadow-primary/20",
             isRunning && "bg-destructive text-white hover:bg-destructive/90"
           )}
         >

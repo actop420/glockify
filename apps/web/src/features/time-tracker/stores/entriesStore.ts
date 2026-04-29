@@ -12,6 +12,7 @@ type EntriesState = {
   updateEntry: (id: string, patch: Partial<TimeEntry>) => void
   deleteEntry: (id: string) => void
   duplicateEntry: (id: string) => void
+  toggleEntryTag: (entryId: string, tagId: string) => void
   addProject: (project: Project) => void
   addTag: (tag: Tag) => void
 }
@@ -70,6 +71,20 @@ export const useEntriesStore = create<EntriesState>()(
         }
         set((s) => ({ entries: [duplicate, ...s.entries] }))
       },
+
+      toggleEntryTag: (entryId, tagId) =>
+        set((s) => ({
+          entries: s.entries.map((entry) =>
+            entry.id === entryId
+              ? {
+                  ...entry,
+                  tags: entry.tags.includes(tagId)
+                    ? entry.tags.filter((id) => id !== tagId)
+                    : [...entry.tags, tagId],
+                }
+              : entry
+          ),
+        })),
 
       addProject: (project) =>
         set((s) => ({ projects: [...s.projects, project] })),

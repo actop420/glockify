@@ -16,8 +16,8 @@ export const Route = createRootRoute({
   shellComponent: RootDocument,
 })
 
-// Inlined to run synchronously before React hydrates — prevents flash of wrong theme
-const THEME_SCRIPT = `(function(){var t=localStorage.getItem('glockify-theme')||'system';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.classList.add(r)})()`
+// Inlined to run synchronously before React hydrates - prevents flash of wrong theme.
+const THEME_SCRIPT = `(function(){try{var t=localStorage.getItem('glockify-theme')||'system';var r=t==='system'?(window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'):t;document.documentElement.classList.add(r)}catch(e){document.documentElement.classList.add('light')}})()`
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (

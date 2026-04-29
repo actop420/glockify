@@ -13,6 +13,7 @@ import {
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
 
+import { filterProjects, findProjectById } from "../utils/projects"
 import type { Project } from "../types/time-entry"
 
 const FALLBACK_PROJECT_COLORS = [
@@ -46,13 +47,8 @@ export function ProjectPicker({
   const [open, setOpen] = React.useState(false)
   const [search, setSearch] = React.useState("")
 
-  const selectedProject = projects.find((project) => project.id === value) ?? null
-  const filteredProjects = projects.filter((project) => {
-    const query = search.trim().toLowerCase()
-    if (!query) return true
-
-    return `${project.name} ${project.clientName ?? ""}`.toLowerCase().includes(query)
-  })
+  const selectedProject = findProjectById(projects, value)
+  const filteredProjects = filterProjects(projects, search)
 
   function handleOpenChange(nextOpen: boolean) {
     setOpen(nextOpen)
@@ -82,7 +78,7 @@ export function ProjectPicker({
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger
         className={cn(
-          "flex min-w-0 items-center gap-2 rounded-md text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 data-[popup-open]:bg-muted",
+          "flex min-w-0 cursor-pointer items-center gap-2 rounded-md text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 data-[popup-open]:bg-muted",
           variant === "timer"
             ? "ml-auto h-10 max-w-[360px] shrink-0 justify-start px-3"
             : "shrink px-2 py-1 leading-5",
@@ -119,7 +115,7 @@ export function ProjectPicker({
             <button
               type="button"
               onClick={() => selectProject(null)}
-              className="flex w-full items-center rounded-md px-2 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
+              className="flex w-full cursor-pointer items-center rounded-md px-2 py-2 text-left text-sm text-muted-foreground hover:bg-muted"
             >
               No project
             </button>
@@ -130,7 +126,7 @@ export function ProjectPicker({
               type="button"
               onClick={() => selectProject(project.id)}
               className={cn(
-                "flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-muted",
+                "flex w-full cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-left text-sm hover:bg-muted",
                 project.id === value && "bg-muted"
               )}
             >
@@ -157,7 +153,7 @@ export function ProjectPicker({
             <button
               type="button"
               onClick={createProject}
-              className="flex w-full items-center gap-3 rounded-md px-2 py-2 text-left text-sm text-primary hover:bg-muted"
+              className="flex w-full cursor-pointer items-center gap-3 rounded-md px-2 py-2 text-left text-sm text-primary hover:bg-muted"
             >
               <PlusIcon className="size-4" />
               Create new project
