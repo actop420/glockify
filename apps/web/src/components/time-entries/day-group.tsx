@@ -1,7 +1,7 @@
-import { useEntriesTable } from "../lib/table"
-import { formatDuration } from "../utils/time"
-import { EntryRow } from "./EntryRow"
-import type { DayGroup as DayGroupData } from "../utils/time"
+import type { DayGroup as DayGroupData } from "@/lib/time-entries/time"
+import { EntryRow } from "@/components/time-entries/entry-row"
+import { useEntriesTable } from "@/hooks/use-entries-table"
+import { formatDuration } from "@/lib/time-entries/time"
 
 type Props = {
   group: DayGroupData
@@ -18,20 +18,21 @@ export function DayGroup({ group }: Props) {
           <span className="flex min-w-0 flex-1 text-sm font-medium text-muted-foreground">
             {group.label}
           </span>
-          <span className="w-44 shrink-0 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+          <span className="w-44 shrink-0 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
             Project
           </span>
         </div>
 
-        <div className="flex shrink-0 items-center gap-5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+        <div className="flex shrink-0 items-center gap-5 text-xs font-semibold tracking-wide text-muted-foreground uppercase">
           <span className="w-9 text-center">Tags</span>
+          <span className="w-9 text-center">Bill</span>
           <span className="w-40 text-center">Time</span>
           <span className="w-9 text-center">Date</span>
           <span className="w-9" aria-hidden="true" />
           <span className="w-9" aria-hidden="true" />
           <span className="inline-flex w-28 items-baseline justify-end gap-1.5 text-right">
             Total:
-            <span className="text-base font-semibold tabular-nums text-foreground">
+            <span className="text-base font-semibold text-foreground tabular-nums">
               {formatDuration(group.total)}
             </span>
           </span>

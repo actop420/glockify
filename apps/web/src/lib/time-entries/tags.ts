@@ -1,4 +1,4 @@
-import type { Tag } from "../types/time-entry"
+import type { Tag } from "@/lib/time-entries/types"
 
 export function getTagNames(tagIds: Array<string>, tags: Array<Tag>): Array<string> {
   const tagNameById = new Map(tags.map((tag) => [tag.id, tag.name]))

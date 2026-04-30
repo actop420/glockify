@@ -1,6 +1,7 @@
 import * as React from "react"
 import {
   CalendarIcon,
+  DollarSignIcon,
   EllipsisVerticalIcon,
   PlayIcon,
   TagIcon,
@@ -21,18 +22,19 @@ import {
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { useEntriesStore } from "../stores/entriesStore"
-import { useTimerStore } from "../stores/timerStore"
+import type { TimeEntry } from "@/lib/time-entries/types"
+import { useEntriesStore } from "@/hooks/use-entries-store"
+import { useTimerStore } from "@/hooks/use-timer-store"
 import {
   formatDuration,
   formatTime,
   parseDuration,
   parseTimeToEpoch,
   toDayKey,
-} from "../utils/time"
-import { getTagNames } from "../utils/tags"
-import { ProjectPicker } from "./ProjectPicker"
-import type { TimeEntry } from "../types/time-entry"
+} from "@/lib/time-entries/time"
+import { getTagNames } from "@/lib/time-entries/tags"
+import { ProjectPicker } from "@/components/time-entries/project-picker"
+import { SelectedTagBadges } from "@/components/time-entries/selected-tag-badges"
 
 type EditingField = "description" | "startTime" | "endTime" | "duration" | null
 
@@ -100,6 +102,7 @@ export function EntryRow({ entry }: Props) {
       description: entry.description,
       projectId: entry.projectId,
       tags: entry.tags,
+      isBillable: entry.isBillable,
     })
     startTimer()
   }
@@ -112,8 +115,9 @@ export function EntryRow({ entry }: Props) {
   return (
     <div
       className={cn(
-        "group grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border bg-card px-4 transition-colors hover:bg-muted/25 last:border-0 sm:px-5",
-        entry.isOvertime && "border-l-2 border-l-amber-400 pl-[18px] sm:pl-[18px]"
+        "group grid min-h-16 grid-cols-[minmax(0,1fr)_auto] items-center border-b border-border bg-card px-4 transition-colors last:border-0 hover:bg-muted/25 sm:px-5",
+        entry.isOvertime &&
+          "border-l-2 border-l-amber-400 pl-[1.125rem] sm:pl-[1.125rem]"
       )}
     >
       {/* Left: description + project */}
@@ -138,10 +142,12 @@ export function EntryRow({ entry }: Props) {
               role="button"
               tabIndex={0}
               onClick={() => startEdit("description", entry.description)}
-              onKeyDown={(e) => e.key === "Enter" && startEdit("description", entry.description)}
+              onKeyDown={(e) =>
+                e.key === "Enter" && startEdit("description", entry.description)
+              }
               className={cn(
                 "block cursor-text truncate text-base leading-6 text-foreground",
-                !entry.description && "italic text-muted-foreground"
+                !entry.description && "text-muted-foreground italic"
               )}
             >
               {entry.description || "No description"}
@@ -161,7 +167,7 @@ export function EntryRow({ entry }: Props) {
         </div>
       </div>
 
-      {/* Right: tag, time range, calendar, duration, play, kebab */}
+      {/* Right: tag, billable, time range, calendar, duration, play, kebab */}
       <div className="flex shrink-0 items-center gap-5">
         {/* Tags */}
         <Popover>
@@ -169,25 +175,22 @@ export function EntryRow({ entry }: Props) {
             aria-label={selectedTagLabel ? `Tags: ${selectedTagLabel}` : "Tags"}
             title={selectedTagLabel || undefined}
             className={cn(
-              "flex h-9 min-w-9 cursor-pointer items-center gap-1.5 rounded-md px-2 transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20",
+              "flex h-9 min-w-9 cursor-pointer items-center gap-1.5 rounded-md px-2 transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none",
               selectedTagNames.length > 0
                 ? "justify-start text-foreground"
                 : "justify-center text-muted-foreground"
             )}
           >
             {selectedTagNames.length > 0 ? (
-              <Badge
-                variant="secondary"
-                className="rounded-md px-2 py-0 text-xs font-normal leading-5"
-              >
-                {selectedTagLabel}
-              </Badge>
+              <SelectedTagBadges tagNames={selectedTagNames} />
             ) : (
               <TagIcon className="size-4.5 shrink-0" />
             )}
           </PopoverTrigger>
           <PopoverContent className="w-48 p-3">
-            <p className="mb-2 text-xs font-medium text-muted-foreground">Tags</p>
+            <p className="mb-2 text-xs font-medium text-muted-foreground">
+              Tags
+            </p>
             <div className="flex flex-col gap-1.5">
               {allTags.map((tag) => (
                 <label
@@ -207,6 +210,25 @@ export function EntryRow({ entry }: Props) {
           </PopoverContent>
         </Popover>
 
+        {/* Billable */}
+        <button
+          type="button"
+          aria-label={
+            entry.isBillable ? "Mark as non-billable" : "Mark as billable"
+          }
+          aria-pressed={entry.isBillable}
+          title={entry.isBillable ? "Billable" : "Non-billable"}
+          onClick={() =>
+            updateEntry(entry.id, { isBillable: !entry.isBillable })
+          }
+          className={cn(
+            "flex size-9 cursor-pointer items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none",
+            entry.isBillable && "text-primary hover:text-primary"
+          )}
+        >
+          <DollarSignIcon className="size-4.5 stroke-[1.9]" />
+        </button>
+
         {/* Time range */}
         <div className="flex w-40 items-center justify-center gap-1.5 text-base text-foreground">
           {editingField === "startTime" ? (
@@ -216,14 +238,19 @@ export function EntryRow({ entry }: Props) {
               onChange={(e) => setFieldValue(e.target.value)}
               onBlur={() => commitEdit("startTime", fieldValue)}
               onKeyDown={(e) => handleKeyDown(e, "startTime")}
-              className="w-16 rounded border border-ring bg-background px-1.5 text-center text-base outline-none ring-2 ring-ring/20"
+              className="w-16 rounded border border-ring bg-background px-1.5 text-center text-base ring-2 ring-ring/20 outline-none"
             />
           ) : (
             <span
               role="button"
               tabIndex={0}
-              onClick={() => startEdit("startTime", formatTime(entry.startTime))}
-              onKeyDown={(e) => e.key === "Enter" && startEdit("startTime", formatTime(entry.startTime))}
+              onClick={() =>
+                startEdit("startTime", formatTime(entry.startTime))
+              }
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                startEdit("startTime", formatTime(entry.startTime))
+              }
               className="cursor-text rounded px-2 py-1 hover:bg-muted"
             >
               {formatTime(entry.startTime)}
@@ -239,14 +266,17 @@ export function EntryRow({ entry }: Props) {
               onChange={(e) => setFieldValue(e.target.value)}
               onBlur={() => commitEdit("endTime", fieldValue)}
               onKeyDown={(e) => handleKeyDown(e, "endTime")}
-              className="w-16 rounded border border-ring bg-background px-1.5 text-center text-base outline-none ring-2 ring-ring/20"
+              className="w-16 rounded border border-ring bg-background px-1.5 text-center text-base ring-2 ring-ring/20 outline-none"
             />
           ) : (
             <span
               role="button"
               tabIndex={0}
               onClick={() => startEdit("endTime", formatTime(entry.endTime))}
-              onKeyDown={(e) => e.key === "Enter" && startEdit("endTime", formatTime(entry.endTime))}
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                startEdit("endTime", formatTime(entry.endTime))
+              }
               className="cursor-text rounded px-2 py-1 hover:bg-muted"
             >
               {formatTime(entry.endTime)}
@@ -272,15 +302,18 @@ export function EntryRow({ entry }: Props) {
               onChange={(e) => setFieldValue(e.target.value)}
               onBlur={() => commitEdit("duration", fieldValue)}
               onKeyDown={(e) => handleKeyDown(e, "duration")}
-              className="w-full rounded border border-ring bg-background px-1.5 text-right text-base outline-none ring-2 ring-ring/20"
+              className="w-full rounded border border-ring bg-background px-1.5 text-right text-base ring-2 ring-ring/20 outline-none"
             />
           ) : (
             <span
               role="button"
               tabIndex={0}
               onClick={() => startEdit("duration", formatDuration(duration))}
-              onKeyDown={(e) => e.key === "Enter" && startEdit("duration", formatDuration(duration))}
-              className="cursor-text rounded px-2 py-1 text-base font-semibold tabular-nums text-foreground hover:bg-muted"
+              onKeyDown={(e) =>
+                e.key === "Enter" &&
+                startEdit("duration", formatDuration(duration))
+              }
+              className="cursor-text rounded px-2 py-1 text-base font-semibold text-foreground tabular-nums hover:bg-muted"
             >
               {formatDuration(duration)}
             </span>

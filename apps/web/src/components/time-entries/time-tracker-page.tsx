@@ -4,11 +4,11 @@ import { BellIcon } from "lucide-react"
 import { Button } from "@workspace/ui/components/button"
 import { ThemeToggle } from "@workspace/ui/components/theme-toggle"
 
-import { DayGroup } from "../components/DayGroup"
-import { TimeTrackerSidebar } from "../components/TimeTrackerSidebar"
-import { TimerBar } from "../components/TimerBar"
-import { useEntriesStore } from "../stores/entriesStore"
-import { formatDuration, groupEntriesByDay } from "../utils/time"
+import { DayGroup } from "@/components/time-entries/day-group"
+import { TimeTrackerSidebar } from "@/components/time-entries/time-tracker-sidebar"
+import { TimerBar } from "@/components/time-entries/timer-bar"
+import { useEntriesStore } from "@/hooks/use-entries-store"
+import { formatDuration, groupEntriesByDay } from "@/lib/time-entries/time"
 
 export function TimeTrackerPage() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = React.useState(false)

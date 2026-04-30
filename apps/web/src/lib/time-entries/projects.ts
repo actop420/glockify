@@ -1,4 +1,4 @@
-import type { Project } from "../types/time-entry"
+import type { Project } from "@/lib/time-entries/types"
 
 export function findProjectById(projects: Array<Project>, projectId: string | null): Project | null {
   if (projectId === null) return null

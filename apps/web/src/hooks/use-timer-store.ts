@@ -1,7 +1,7 @@
 import { create } from "zustand"
 import { createJSONStorage, persist } from "zustand/middleware"
 
-import type { TimeEntry } from "../types/time-entry"
+import type { TimeEntry } from "@/lib/time-entries/types"
 
 type TimerState = {
   isRunning: boolean
@@ -10,6 +10,7 @@ type TimerState = {
   description: string
   projectId: string | null
   tags: Array<string>
+  isBillable: boolean
 
   startTimer: () => void
   stopTimer: () => Omit<TimeEntry, "id"> | null
@@ -20,8 +21,11 @@ type TimerState = {
   setDescription: (v: string) => void
   setProjectId: (v: string | null) => void
   setTags: (v: Array<string>) => void
+  toggleBillable: () => void
   toggleTag: (tagId: string) => void
-  prefill: (values: Pick<TimeEntry, "description" | "projectId" | "tags">) => void
+  prefill: (
+    values: Pick<TimeEntry, "description" | "projectId" | "tags" | "isBillable">
+  ) => void
 }
 
 export const useTimerStore = create<TimerState>()(
@@ -33,6 +37,7 @@ export const useTimerStore = create<TimerState>()(
       description: "",
       projectId: null,
       tags: [],
+      isBillable: false,
 
       startTimer: () => {
         if (get().isRunning) return
@@ -40,29 +45,60 @@ export const useTimerStore = create<TimerState>()(
       },
 
       stopTimer: () => {
-        const { isRunning, startedAt, description, projectId, tags } = get()
+        const {
+          isRunning,
+          startedAt,
+          description,
+          projectId,
+          tags,
+          isBillable,
+        } = get()
         if (!isRunning || startedAt === null) return null
         const endTime = Date.now()
         set({ isRunning: false, startedAt: null })
-        return { description, projectId, tags, startTime: startedAt, endTime, isOvertime: false }
+        return {
+          description,
+          projectId,
+          tags,
+          isBillable,
+          startTime: startedAt,
+          endTime,
+          isOvertime: false,
+        }
       },
 
       startManual: () => {
-        const { description, projectId, tags, manualStartTime } = get()
+        const { description, projectId, tags, isBillable, manualStartTime } =
+          get()
         if (manualStartTime === null) return null
         const endTime = Date.now()
         if (manualStartTime >= endTime) return null
-        return { description, projectId, tags, startTime: manualStartTime, endTime, isOvertime: false }
+        return {
+          description,
+          projectId,
+          tags,
+          isBillable,
+          startTime: manualStartTime,
+          endTime,
+          isOvertime: false,
+        }
       },
 
       reset: () =>
-        set({ description: "", projectId: null, tags: [], manualStartTime: null }),
+        set({
+          description: "",
+          projectId: null,
+          tags: [],
+          isBillable: false,
+          manualStartTime: null,
+        }),
 
       setStartedAt: (ts) => set({ startedAt: ts }),
       setManualStartTime: (ts) => set({ manualStartTime: ts }),
       setDescription: (v) => set({ description: v }),
       setProjectId: (v) => set({ projectId: v }),
       setTags: (v) => set({ tags: v }),
+      toggleBillable: () => set((s) => ({ isBillable: !s.isBillable })),
       toggleTag: (tagId) =>
         set((s) => ({
           tags: s.tags.includes(tagId)
@@ -75,6 +111,7 @@ export const useTimerStore = create<TimerState>()(
           description: values.description,
           projectId: values.projectId,
           tags: values.tags,
+          isBillable: values.isBillable,
         }),
     }),
     {
@@ -87,6 +124,7 @@ export const useTimerStore = create<TimerState>()(
         description: s.description,
         projectId: s.projectId,
         tags: s.tags,
+        isBillable: s.isBillable,
       }),
     }
   )

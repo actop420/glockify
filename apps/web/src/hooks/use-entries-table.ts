@@ -1,7 +1,7 @@
 import { getCoreRowModel, useReactTable } from "@tanstack/react-table"
 
-import { entryColumns } from "./columns"
-import type { TimeEntry } from "../types/time-entry"
+import type { TimeEntry } from "@/lib/time-entries/types"
+import { entryColumns } from "@/lib/time-entries/columns"
 
 export function useEntriesTable(data: Array<TimeEntry>) {
   return useReactTable({

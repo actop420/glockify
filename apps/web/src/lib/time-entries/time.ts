@@ -1,4 +1,4 @@
-import type { TimeEntry } from "../types/time-entry"
+import type { TimeEntry } from "@/lib/time-entries/types"
 
 export type DayGroup = {
   dayKey: string

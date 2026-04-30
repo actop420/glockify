@@ -3,6 +3,7 @@ export type TimeEntry = {
   description: string
   projectId: string | null
   tags: Array<string>
+  isBillable: boolean
   startTime: number
   endTime: number
   isOvertime: boolean

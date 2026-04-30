@@ -1,6 +1,6 @@
 import type { ColumnDef } from "@tanstack/react-table"
 
-import type { TimeEntry } from "../types/time-entry"
+import type { TimeEntry } from "@/lib/time-entries/types"
 
 export const entryColumns: Array<ColumnDef<TimeEntry>> = [
   {
@@ -14,6 +14,10 @@ export const entryColumns: Array<ColumnDef<TimeEntry>> = [
   {
     id: "tags",
     accessorKey: "tags",
+  },
+  {
+    id: "billable",
+    accessorKey: "isBillable",
   },
   {
     id: "timeRange",

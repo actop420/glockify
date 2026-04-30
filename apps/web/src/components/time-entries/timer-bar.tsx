@@ -1,7 +1,6 @@
 import * as React from "react"
-import { SearchIcon, TagIcon } from "lucide-react"
+import { DollarSignIcon, SearchIcon, TagIcon } from "lucide-react"
 
-import { Badge } from "@workspace/ui/components/badge"
 import { Button } from "@workspace/ui/components/button"
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -11,12 +10,13 @@ import {
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { useElapsedTime } from "../hooks/useElapsedTime"
-import { useEntriesStore } from "../stores/entriesStore"
-import { useTimerStore } from "../stores/timerStore"
-import { formatDuration, formatTime, parseTimeToEpoch } from "../utils/time"
-import { filterTags, getTagNames } from "../utils/tags"
-import { ProjectPicker } from "./ProjectPicker"
+import { useElapsedTime } from "@/hooks/use-elapsed-time"
+import { useEntriesStore } from "@/hooks/use-entries-store"
+import { useTimerStore } from "@/hooks/use-timer-store"
+import { formatDuration, formatTime, parseTimeToEpoch } from "@/lib/time-entries/time"
+import { filterTags, getTagNames } from "@/lib/time-entries/tags"
+import { ProjectPicker } from "@/components/time-entries/project-picker"
+import { SelectedTagBadges } from "@/components/time-entries/selected-tag-badges"
 
 const FALLBACK_TAG_COLORS = [
   "#E39B31",
@@ -36,6 +36,7 @@ export function TimerBar() {
   const description = useTimerStore((state) => state.description)
   const projectId = useTimerStore((state) => state.projectId)
   const tags = useTimerStore((state) => state.tags)
+  const isBillable = useTimerStore((state) => state.isBillable)
   const startTimer = useTimerStore((state) => state.startTimer)
   const stopTimer = useTimerStore((state) => state.stopTimer)
   const startManual = useTimerStore((state) => state.startManual)
@@ -44,6 +45,7 @@ export function TimerBar() {
   const setManualStartTime = useTimerStore((state) => state.setManualStartTime)
   const setDescription = useTimerStore((state) => state.setDescription)
   const setProjectId = useTimerStore((state) => state.setProjectId)
+  const toggleBillable = useTimerStore((state) => state.toggleBillable)
   const toggleTag = useTimerStore((state) => state.toggleTag)
 
   const projects = useEntriesStore((state) => state.projects)
@@ -51,10 +53,8 @@ export function TimerBar() {
   const addEntry = useEntriesStore((state) => state.addEntry)
   const addProject = useEntriesStore((state) => state.addProject)
 
-
   const elapsed = useElapsedTime(isRunning ? startedAt : manualStartTime)
   const displayDuration = formatDuration(elapsed)
-
 
   const [startTimeInput, setStartTimeInput] = React.useState("")
   const [tagSearch, setTagSearch] = React.useState("")
@@ -105,19 +105,23 @@ export function TimerBar() {
   return (
     <div
       className={cn(
-        "flex min-h-14 items-stretch rounded-xl border border-border bg-card shadow-sm transition-all duration-300",
-        isRunning && "border-primary/60 shadow-[0_0_0_1px_color-mix(in_srgb,var(--primary)_28%,transparent),0_0_28px_color-mix(in_srgb,var(--primary)_22%,transparent)]"
+        "flex h-14 items-stretch overflow-hidden rounded-lg border border-border/80 bg-white shadow-sm transition-all duration-300 dark:bg-card",
+        isRunning &&
+          "border-primary/60 shadow-[0_0_0_0.0625rem_color-mix(in_srgb,var(--primary)_28%,transparent),0_0_1.75rem_color-mix(in_srgb,var(--primary)_22%,transparent)]"
       )}
     >
-      {/* Description + project */}
-      <div className="flex min-w-0 flex-1 items-center gap-4 px-4 sm:px-5">
+      {/* Description */}
+      <div className="flex min-w-0 flex-1 items-center">
         <Input
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           placeholder="What are you working on?"
-          className="min-w-0 border-transparent bg-transparent text-base shadow-none hover:border-border focus-visible:border-ring"
+          className="h-full min-w-0 rounded-none border-0 bg-transparent px-4 text-sm shadow-none placeholder:text-muted-foreground/60 focus-visible:border-0 focus-visible:ring-0 sm:px-5"
         />
-        {/* Project picker */}
+      </div>
+
+      {/* Project picker */}
+      <div className="flex shrink-0 items-center border-l border-border/80 px-4">
         <ProjectPicker
           projects={projects}
           value={projectId}
@@ -126,33 +130,28 @@ export function TimerBar() {
         />
       </div>
 
-      <div className="flex shrink-0 items-center border-l border-border px-2">
+      <div className="flex shrink-0 items-center gap-4 border-l border-border/80 px-4">
         {/* Tag picker */}
         <Popover>
           <PopoverTrigger
             aria-label={selectedTagLabel ? `Tags: ${selectedTagLabel}` : "Tags"}
             title={selectedTagLabel || undefined}
             className={cn(
-              "flex h-10 min-w-12 max-w-80 cursor-pointer items-center justify-center gap-1.5 rounded-md px-3 text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 data-[popup-open]:bg-muted",
+              "flex h-9 max-w-72 min-w-9 cursor-pointer items-center justify-center text-sm transition-colors focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none",
               hasTagSelection
-                ? "overflow-hidden text-foreground"
-                : "text-muted-foreground"
+                ? "gap-2 overflow-hidden text-foreground"
+                : "rounded-md border border-border/70 bg-muted/30 px-2 text-muted-foreground shadow-xs hover:bg-muted/50 data-[popup-open]:bg-muted/50 dark:bg-muted/20 dark:hover:bg-muted/30"
             )}
           >
             {selectedTagNames.length > 0 ? (
-              <Badge
-                variant="secondary"
-                className="max-w-full rounded-md px-2 py-0 text-left text-xs font-normal leading-5"
-              >
-                <span className="truncate">{selectedTagLabel}</span>
-              </Badge>
+              <SelectedTagBadges tagNames={selectedTagNames} />
             ) : (
-              <TagIcon className="size-4 shrink-0" />
+              <TagIcon className="size-4 shrink-0 stroke-[1.8]" />
             )}
           </PopoverTrigger>
           <PopoverContent sideOffset={8} className="w-60 p-2 shadow-xl">
             <div className="relative">
-              <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 autoFocus
                 value={tagSearch}
@@ -177,7 +176,8 @@ export function TimerBar() {
                     className="size-2 shrink-0 rounded-full"
                     style={{
                       backgroundColor:
-                        tag.color ?? FALLBACK_TAG_COLORS[index % FALLBACK_TAG_COLORS.length],
+                        tag.color ??
+                        FALLBACK_TAG_COLORS[index % FALLBACK_TAG_COLORS.length],
                     }}
                   />
                   {tag.name}
@@ -191,6 +191,21 @@ export function TimerBar() {
             </div>
           </PopoverContent>
         </Popover>
+
+        <button
+          type="button"
+          aria-label={isBillable ? "Mark as non-billable" : "Mark as billable"}
+          aria-pressed={isBillable}
+          title={isBillable ? "Billable" : "Non-billable"}
+          onClick={toggleBillable}
+          className={cn(
+            "flex size-9 cursor-pointer items-center justify-center rounded-md border border-border/70 bg-muted/30 text-muted-foreground shadow-xs transition-colors hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none dark:bg-muted/20 dark:hover:bg-muted/30",
+            isBillable &&
+              "border-border/70 bg-muted/40 text-primary hover:bg-muted/60 dark:bg-muted/30"
+          )}
+        >
+          <DollarSignIcon className="size-4 stroke-[1.9]" />
+        </button>
       </div>
 
       {/* Duration display - start-time edits are only available after the timer starts */}
@@ -198,15 +213,17 @@ export function TimerBar() {
         <PopoverTrigger
           disabled={!isRunning}
           className={cn(
-            "flex w-32 shrink-0 items-center justify-center rounded-md px-2 text-center text-2xl font-medium tabular-nums transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20",
-            isRunning ? "cursor-pointer text-primary" : "cursor-default text-foreground hover:bg-transparent"
+            "flex w-32 shrink-0 items-center justify-center px-4 text-center text-xl font-semibold tabular-nums transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none",
+            isRunning
+              ? "cursor-pointer text-primary"
+              : "cursor-default text-foreground hover:bg-transparent"
           )}
         >
           {displayDuration}
         </PopoverTrigger>
         <PopoverContent className="w-auto p-3" sideOffset={6}>
           <div className="flex items-center gap-3">
-            <span className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+            <span className="text-[0.6875rem] font-semibold tracking-wider text-muted-foreground uppercase">
               Start time
             </span>
             <input
@@ -231,11 +248,11 @@ export function TimerBar() {
       </Popover>
 
       {/* Start / Stop */}
-      <div className="flex shrink-0 items-center pl-1 pr-1.5">
+      <div className="flex shrink-0 items-center pr-3">
         <Button
           onClick={handleStartStop}
           className={cn(
-            "h-12 w-36 cursor-pointer rounded-lg text-base font-semibold tracking-wide shadow-md shadow-primary/20",
+            "h-10 w-[6rem] cursor-pointer rounded-md text-xs font-semibold tracking-wide shadow-sm shadow-primary/20",
             isRunning && "bg-destructive text-white hover:bg-destructive/90"
           )}
         >

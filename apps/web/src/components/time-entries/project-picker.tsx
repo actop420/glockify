@@ -1,9 +1,5 @@
 import * as React from "react"
-import {
-  GlobeIcon,
-  PlusIcon,
-  SearchIcon,
-} from "lucide-react"
+import { GlobeIcon, PlusIcon, SearchIcon } from "lucide-react"
 
 import { Input } from "@workspace/ui/components/input"
 import {
@@ -13,8 +9,8 @@ import {
 } from "@workspace/ui/components/popover"
 import { cn } from "@workspace/ui/lib/utils"
 
-import { filterProjects, findProjectById } from "../utils/projects"
-import type { Project } from "../types/time-entry"
+import type { Project } from "@/lib/time-entries/types"
+import { filterProjects, findProjectById } from "@/lib/time-entries/projects"
 
 const FALLBACK_PROJECT_COLORS = [
   "#E39B31",
@@ -68,7 +64,10 @@ export function ProjectPicker({
     const project = {
       id: crypto.randomUUID(),
       name: trimmed,
-      color: FALLBACK_PROJECT_COLORS[projects.length % FALLBACK_PROJECT_COLORS.length],
+      color:
+        FALLBACK_PROJECT_COLORS[
+          projects.length % FALLBACK_PROJECT_COLORS.length
+        ],
     }
     onCreateProject(project)
     selectProject(project.id)
@@ -78,30 +77,42 @@ export function ProjectPicker({
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger
         className={cn(
-          "flex min-w-0 cursor-pointer items-center gap-2 rounded-md text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/20 data-[popup-open]:bg-muted",
+          "flex min-w-0 cursor-pointer items-center gap-2 rounded-md text-sm transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/20 focus-visible:outline-none data-[popup-open]:bg-muted",
           variant === "timer"
-            ? "ml-auto h-10 max-w-[360px] shrink-0 justify-start px-3"
+            ? "h-9 max-w-[17.5rem] shrink-0 justify-start border border-border/70 bg-muted/30 px-3 shadow-xs hover:bg-muted/50 data-[popup-open]:bg-muted/50 dark:bg-muted/20 dark:hover:bg-muted/30"
             : "shrink px-2 py-1 leading-5",
-          selectedProject ? "text-foreground" : variant === "timer" ? "text-primary" : "text-muted-foreground"
+          selectedProject ? "text-foreground" : "text-muted-foreground"
         )}
       >
         {selectedProject ? (
           <>
-            <span className="size-2 rounded-full" style={{ backgroundColor: selectedProject.color }} />
-            <span className={cn("truncate", variant === "timer" ? "min-w-0" : "max-w-[180px]")}>
+            <span
+              className="size-2 rounded-full"
+              style={{ backgroundColor: selectedProject.color }}
+            />
+            <span
+              className={cn(
+                "truncate",
+                variant === "timer" ? "min-w-0" : "max-w-[11.25rem]"
+              )}
+            >
               {selectedProject.name}
             </span>
           </>
         ) : (
           <>
-            <GlobeIcon className="size-4" />
+            {variant === "timer" ? (
+              <PlusIcon className="size-4 stroke-[1.8]" />
+            ) : (
+              <GlobeIcon className="size-4" />
+            )}
             <span>{variant === "timer" ? "Project" : "No project"}</span>
           </>
         )}
       </PopoverTrigger>
-      <PopoverContent sideOffset={8} className="w-[300px] p-2 shadow-xl">
+      <PopoverContent sideOffset={8} className="w-[18.75rem] p-2 shadow-xl">
         <div className="relative">
-          <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+          <SearchIcon className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             autoFocus
             value={search}
